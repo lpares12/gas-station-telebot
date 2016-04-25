@@ -57,18 +57,7 @@ def getCities(input):
 	list = ast.literal_eval(content)
 	return list
 
-def getPriceGas(city, command):
-	url = 'http://www.gasbuddy.com/Home/Search'
-	params = { 's' : city }
-	data = urllib.urlencode(params)
-	req = urllib2.Request(url, data)
-	if command == '/gas':
-		req.add_header('Cookie', 'PreferredFuelId=1; PreferredFuelType=A')
-	else:
-		req.add_header('Cookie', 'PreferredFuelId=4; PreferredFuelType=D')
-
-	content = urllib2.urlopen(req).read()
-	object_json = json.loads(content)
+def getStation(object_json):
 	cheapest_station = object_json['stations'][0]
 	
 	price_flag = True if cheapest_station['CheapestFuel']['CreditPrice'] != None else False
@@ -82,13 +71,42 @@ def getPriceGas(city, command):
 	gasStation = GasStation(name, address, price, price_flag, conc_city)
 	return gasStation
 
+# Given a set of coordinates returns the cheapest gas station
+# in a GasStation object.
+def getPriceGasByLocation(lat, lng):
+	url = 'http://www.gasbuddy.com/Home/GeoSearch'
+	params = { 'lat' : lat, 'lng' : lng }
+	data = urllib.urlencode(params)
+        req = urllib2.Request(url, data)
+	content = urllib2.urlopen(req).read()
+        object_json = json.loads(content)
+	return getStation(object_json)
+
+# Given a city returns the cheapest gas station in a GasStation object.
+# The command parameter chooses if we are checking for diesel or standard gas.
+def getPriceGasByCity(city, command):
+	url = 'http://www.gasbuddy.com/Home/Search'
+	params = { 's' : city }
+	data = urllib.urlencode(params)
+	req = urllib2.Request(url, data)
+	if command == '/gas':
+		req.add_header('Cookie', 'PreferredFuelId=1; PreferredFuelType=A')
+	else:
+		req.add_header('Cookie', 'PreferredFuelId=4; PreferredFuelType=D')
+
+	content = urllib2.urlopen(req).read()
+	object_json = json.loads(content)
+	return getStation(object_json)
+
+# Help parameter. Shows a description on how to use the bot
 @bot.message_handler(commands=['help'])
 def helpCommand(message):
 	try:
-		bot.reply_to(message, "Type a name of a city and a menu will be displayed, select the city and Gas or Diesel. Alternatively you can enter the commands /gas and /diesel followed by the city name. Using the commands only the most popular city with that name will be displayed.")
+		bot.reply_to(message, "Send a location (USA or Canada) and you are done. Or type a name of a city (USA or Canada) and a menu will be displayed, select the city and Gas or Diesel. Alternatively you can enter the commands /gas and /diesel followed by the city name. Using the commands only the most popular city with that name will be displayed.")
 	except:
-		bot.reply_to(message, "Try again")
 		print "Error"
+		return 1
+
 
 
 @bot.message_handler(commands=['gas', 'diesel'])
@@ -106,7 +124,7 @@ def gasCommand(message):
 			for element in cityList:
 				if str(element) == input:
 					city = str(element)
-			station = getPriceGas(city, command)
+			station = getPriceGasByCity(city, command)
 			bot.reply_to(message, "The cheapest gas station of " + city + " is in the street: " + station.getAddress())
 			bot.reply_to(message, "Price: " + station.getPrice())
 		except:
@@ -123,6 +141,25 @@ def gasCommand(message):
 	except:
 		bot.reply_to(message, 'Could not generate the map')
 		return 3
+
+@bot.message_handler(content_types=['location'])
+def handle_location(message):
+	lng = str(message.location.longitude)
+	lat = str(message.location.latitude)
+	try:
+		station = getPriceGasByLocation(lat,lng)
+		bot.reply_to(message, "The cheapest gas station of your area is in: " + station.getAddress() + ", " + station.getCity() + ". Name: " + station.getName() + ". Price: " + station.getPrice())
+	except:
+		bot.reply_to(message, "Could not get the gas station info. Make sure you sent a location of USA or Canada")
+		return 1
+	try:
+		map_coords = getMapLocation(station.getAddress(), station.getCity())
+		location = telebot.types.Location(map_coords[0], map_coords[1])
+		bot.send_location(message.chat.id,map_coords[0], map_coords[1])
+	except:
+		bot.reply_to(message, 'Could not generate the map')
+		return 2
+	
 
 @bot.message_handler(func=lambda message: True, content_types=['text'])
 def echo_all(message):
