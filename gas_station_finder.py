@@ -98,6 +98,25 @@ def getPriceGasByCity(city, command):
 	object_json = json.loads(content)
 	return getStation(object_json)
 
+# This function is executed when someone types text in the inline!
+@bot.inline_handler(lambda query: len(query.query) > 0)
+def query_with_text(inline_query):
+	try:
+		query = inline_query.query
+		cities = getCities(query)
+		cities_found = []
+		i = 0
+		for city in cities:
+			cities_found.append(telebot.types.InlineQueryResultArticle(str(i), str(city) + " (Gas)", telebot.types.InputTextMessageContent('/gas ' + str(city))))
+			i += 1
+			cities_found.append(telebot.types.InlineQueryResultArticle(str(i), str(city) + " (Diesel)", telebot.types.InputTextMessageContent('/diesel ' + str(city))))
+			i += 1
+			if i > 48:
+				break
+		bot.answer_inline_query(inline_query.id, cities_found)	
+	except Exception as e:
+		print e.message
+
 # Help parameter. Shows a description on how to use the bot
 @bot.message_handler(commands=['help'])
 def helpCommand(message):
@@ -106,8 +125,6 @@ def helpCommand(message):
 	except:
 		print "Error"
 		return 1
-
-
 
 @bot.message_handler(commands=['gas', 'diesel'])
 def gasCommand(message):
@@ -125,7 +142,7 @@ def gasCommand(message):
 				if str(element) == input:
 					city = str(element)
 			station = getPriceGasByCity(city, command)
-			bot.reply_to(message, "The cheapest gas station of " + city + " is in the street: " + station.getAddress())
+			bot.reply_to(message, "The cheapest gas station of " + station.getCity() + " is in the street: " + station.getAddress())
 			bot.reply_to(message, "Price: " + station.getPrice())
 		except:
 			bot.reply_to(message, 'Could not find the prices')
