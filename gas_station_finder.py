@@ -142,8 +142,7 @@ def gasCommand(message):
 				if str(element) == input:
 					city = str(element)
 			station = getPriceGasByCity(city, command)
-			bot.reply_to(message, "The cheapest gas station of " + station.getCity() + " is in the street: " + station.getAddress())
-			bot.reply_to(message, "Price: " + station.getPrice())
+			bot.reply_to(message, "The cheapest gas station of " + station.getCity() + " is in the street: " + station.getAddress() + ". Price: " + station.getPrice())
 		except:
 			bot.reply_to(message, 'Could not find the prices')
 			return 2
