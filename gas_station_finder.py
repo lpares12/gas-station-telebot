@@ -2,7 +2,7 @@
 
 # Including necessary libraries
 # telebot - to use the TelegramBot API
-# urrlib2 - to connect to yandex (translator) and make requests
+# urrlib2 - to make requests
 # json - to get the text of the responses
 import telebot
 import urllib2, urllib
@@ -15,12 +15,12 @@ import requests
 requests.packages.urllib3.disable_warnings()
 
 # Token of the telegram Bot
-TOKEN_TELEGRAM = '130498184:AAFFJLIMxFV-UR8tlKbZeQi2wzU9Dckkr0w'
+TOKEN_TELEGRAM = ''
 # Linking the Bot to this python script
 bot = telebot.TeleBot(TOKEN_TELEGRAM)
 
 # API Key of Google Maps API
-KEY_PLACES = 'AIzaSyAgFyIkMlchQEzPyV3y6NR50MtZdfDvjic'
+KEY_PLACES = ''
 
 # Gas Station class to save all its info
 class GasStation:
